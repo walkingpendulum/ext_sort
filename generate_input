@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import argparse
+from random import choices
+from string import ascii_lowercase as letters
+
+
+def generate_random_input(lines_num, length_limit, file_path='input.txt'):
+    chars, weights = list(letters) + [''], [1] * len(letters) + [len(letters)]
+
+    def babble(): return ''.join(choices(chars, k=length_limit, weights=weights))
+    with open(file_path, 'w') as f:
+        f.writelines('%s\n' % babble() for _ in range(lines_num))
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-f', '--file', dest='file_path', default='input.txt', help='path to target file', type=str,
+                    metavar='\b')
+parser.add_argument('-n', '--lines-number', dest='lines_num', default=1024, help='number of lines in target file',
+                    type=int, metavar='\b')
+parser.add_argument('-l', '--length', dest='length_limit', default=32, help='lines length limit', type=int,
+                    metavar='\b')
+
+args = parser.parse_args()
+generate_random_input(**vars(args))
