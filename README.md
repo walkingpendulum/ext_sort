@@ -6,4 +6,5 @@ External sorting is a class of sorting algorithms that can handle massive amount
 
 ```bash
 $ ./generate_input --file input.txt --length 32 --lines-number 1024
+$ ./sort --input-path input.txt --output-path output.txt --memory 200 --external-storage="$(pwd)" --keep-temp-dir
 ```

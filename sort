@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+from argparse import ArgumentParser
+
+from ext_sort import ext_sort
+
+parser = ArgumentParser()
+parser.add_argument('-i', '--input-path', dest='input_path', default='input.txt', help='path to input file', type=str,
+                    metavar='\b')
+parser.add_argument('-o', '--output-path', dest='output_path', default='output.txt', help='path to output file',
+                    type=str, metavar='\b')
+parser.add_argument('-m', '--memory', dest='mem_size', default=200, help='memory limit',
+                    type=int, metavar='\b')
+parser.add_argument('--external-storage', dest='ext_storage_path', default='.',
+                    help='external storage for temp files', type=str, metavar='\b')
+parser.add_argument('--keep-temp-dir', dest='keep_temp_dir', action='store_true', help='do not remove temp dir')
+
+args = parser.parse_args()
+ext_sort(**vars(args))
