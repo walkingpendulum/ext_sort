@@ -15,7 +15,7 @@ class Nothing:
 
 
 class Pipe:
-    """Tip-of-the-pipe abstraction.
+    """Tip-of-the-pipe abstraction for stream from file.
 
     Can pop values from underlying stream.
     Can be compared with other pipe object using last retrieved from stream value.
@@ -60,15 +60,24 @@ def dump_to_file(it, work_dir, prefix=''):
     return tmp_file.name
 
 
-def merge_runs(run_paths, memory_limit, work_dir, iter_num=None):
-    """Perform k-way merge of sorted files. Value used for k is equals to memory_limit-1."""
+def merge_runs(pipes, memory_limit, work_dir, iter_num=None):
+    """Perform k-way merge of sorted streams. Value used for k is equals to memory_limit-1."""
     resulting_run_paths, prefix = [], 'merge_{:03}_'.format(iter_num) if iter_num is not None else ''
-    for curr_paths_chunk in grouper(iter(run_paths), memory_limit - 1):
-        pipes = list(map(lambda p: Pipe(p), curr_paths_chunk))
-        path = dump_to_file(merge_pipes(pipes), work_dir, prefix)
+    for curr_pipes_chunk in grouper(pipes, memory_limit - 1):
+        path = dump_to_file(merge_pipes(curr_pipes_chunk), work_dir, prefix)
         resulting_run_paths.append(path)
 
     return resulting_run_paths
+
+
+def input_stream(input_path):
+    with open(input_path) as f:
+        yield from f
+
+
+def write_output(output_path, it):
+    with open(output_path, 'w') as f:
+        f.writelines(it)
 
 
 def ext_sort(input_path='input.txt', output_path='output.txt', mem_size=10, ext_storage_path='.', keep_temp_dir=False):
@@ -82,22 +91,29 @@ def ext_sort(input_path='input.txt', output_path='output.txt', mem_size=10, ext_
         TemporaryDirectory.cleanup = lambda self: None
 
     with TemporaryDirectory(dir=ext_storage_path) as work_dir:
-        # initial small blocks sort step
+        # initial small blocks sort
         run_paths = []
-        with open(input_path) as input_stream:
-            for chunk in grouper(input_stream, mem_size):
-                sorted_run = sorted(el.strip() for el in chunk if el)
-                path = dump_to_file(sorted_run, work_dir, prefix='sorted_')
-                run_paths.append(path)
 
-        # k-way pipes merge step. repeated before all pipes fits in memory at once
+        for chunk in grouper(input_stream(input_path), mem_size):
+            sorted_run = sorted(el.strip() for el in chunk if el)
+            path = dump_to_file(sorted_run, work_dir, prefix='sorted_')
+            run_paths.append(path)
+
+        # perform k-way merge of sorted streams. repeated before all pipes fits in memory at once
+        # value used for k is equals to mem_size-1
         last_run_cond, iter_num = len(run_paths) < mem_size, 0
         while not last_run_cond:
-            run_paths = merge_runs(run_paths, mem_size, work_dir, iter_num)
+            pipes = map(Pipe, run_paths)
+            run_paths, prefix = [], 'merge_{:03}_'.format(iter_num) if iter_num is not None else ''
+            for curr_pipes_chunk in grouper(pipes, mem_size - 1):
+                path = dump_to_file(merge_pipes(curr_pipes_chunk), work_dir, prefix)
+                run_paths.append(path)
+
             iter_num += 1
             last_run_cond = len(run_paths) < mem_size
 
-        # merge pipes last time and write sorted data to output file
+        # merge pipes last time
         pipes = list(map(lambda p: Pipe(p), run_paths))
-        with open(output_path, 'w') as f:
-            f.writelines('%s\n' % line for line in merge_pipes(pipes))
+
+        # write sorted data to output file
+        write_output(output_path, ('%s\n' % line for line in merge_pipes(pipes)))
