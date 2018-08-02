@@ -16,7 +16,7 @@ class StringIOPipe(ext_sort.Pipe):
 
 class SimpleOrderCheckTestCase(unittest.TestCase):
     @patch('ext_sort.Pipe', new=StringIOPipe)
-    @patch('tempfile.TemporaryDirectory', new=MagicMock(spec=TemporaryDirectory))
+    @patch('ext_sort.TemporaryDirectory', new=MagicMock(spec=TemporaryDirectory))
     @patch('ext_sort.dump_to_file', new=lambda it, *a, **k: '\n'.join(it), spec=ext_sort.dump_to_file)
     @patch('ext_sort.input_stream', spec=ext_sort.input_stream)
     def test_ext_sort(self, input_stream_mock):
