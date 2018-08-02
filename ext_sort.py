@@ -57,7 +57,7 @@ def merge_pipes(pipes):
     heapq.heapify(pipes)
     while not pipes[0].empty:
         yield pipes[0].pop()
-        heapq._siftup(pipes, 0)
+        heapq.heapreplace(pipes, pipes[0])
 
 
 def dump_to_file(it, work_dir):
