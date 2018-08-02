@@ -17,17 +17,16 @@ class StringIOPipe(ext_sort.Pipe):
 class SimpleOrderCheckTestCase(unittest.TestCase):
     @patch('ext_sort.Pipe', new=StringIOPipe)
     @patch('tempfile.TemporaryDirectory', new=MagicMock(spec=TemporaryDirectory))
-    @patch('ext_sort.dump_to_file', new=lambda it, *a, **k: ''.join('%s\n' % x for x in it), spec=ext_sort.dump_to_file)
+    @patch('ext_sort.dump_to_file', new=lambda it, *a, **k: '\n'.join(it), spec=ext_sort.dump_to_file)
     @patch('ext_sort.input_stream', spec=ext_sort.input_stream)
-    @patch('ext_sort.write_output', spec=ext_sort.write_output)
-    def test_ext_sort(self, write_output_mock, input_stream_mock):
+    def test_ext_sort(self, input_stream_mock):
         result, elements = [], [x * 10 for x in ascii_lowercase]
 
-        input_stream_mock.return_value = StringIO(''.join('%s\n' % x for x in elements))
-        write_output_mock.side_effect = lambda _, it: result.extend(x.strip() for x in it if x)
+        input_stream_mock.return_value = StringIO('\n'.join(elements))
+        with patch('ext_sort.move', autospec=True) as move_mock:
+            move_mock.side_effect = lambda s, _: result.extend(line.strip() for line in StringIO(s))
 
-        # perform sort
-        ext_sort.ext_sort(mem_size=4)
+            ext_sort.ext_sort(mem_size=4)
 
         # check order
         self.assertEqual(result, list(sorted(elements)))
