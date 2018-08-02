@@ -39,8 +39,12 @@ class Pipe:
         return self.value == Nothing
 
     def __lt__(self, other):
-        self_, other_ = [(x.empty, x.value if not x.value == Nothing else '') for x in [self, other]]
-        return self_ < other_
+        if self.empty ^ other.empty:
+            return not self.empty   # non-Nothing < Nothing
+        elif not self.empty:
+            return self.value < other.value
+
+        return True     # whatever: Nothing ? Nothing
 
     @staticmethod
     def stream(path):
